@@ -1,3 +1,7 @@
+##### [260324]
+
+- [ArrayAs2D](/etc/$$.ArrayAs2D.jsxlib): Added various features, public methods and customization options relative to angle orientation and the swap operator (`~`). See the public methods `swapSimple()`, `isSwapSimple()`, `swapOrthogonal()`, `angleOrientation()`, `isClockwise()` for more detail. The new method `equalNumbers(a,b)` (epsilon-aware utility for comparing numbers) is a shortcut of the internal `~.EQUA(a,b)`, it may be invoked from a client module to keep external numeric routines consistent with `ArrayAs2D` approximations.
+
 ##### [260220]
 
 - [ArrayAs2D](/etc/$$.ArrayAs2D.jsxlib): Added the public method `getEpsilon()` (returns the current epsilon-machine). Bugfix: `1/U` was returning `[0,0]` instead of the normalized vector when one of the coordinates were 0. Corrected a few typos.
