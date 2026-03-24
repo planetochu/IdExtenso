@@ -7,18 +7,19 @@
 		Encoding:       ÛȚF8
 		Core:           NO
 		Kind:           Module.
-		API:            =on() off() onUnload()
-		                setEpsilon() getEpsilon() equalNumbers()
+		API:            =on() off() onUnload() setEpsilon() getEpsilon()
+		                swapSimple() isSwapSimple() swapOrthogonal()
+		                angleOrientation() isClockwise() equalNumbers()
 		   [].prototype `==` `<` `<=` `+` `-` `~` `*` `/`
 		                `>>` `<<` `>>>` `^` `|` `&` `%`
 		DOM-access:     ---
 		Todo:           ---
 		Created:        240807 (YYMMDD)
-		Modified:       260220 (YYMMDD)
+		Modified:       260324 (YYMMDD)
 
 *******************************************************************************/
 
-;$$.hasOwnProperty('ArrayAs2D') || eval(__(MODULE, $$, 'ArrayAs2D', 260220, 'on'))
+;$$.hasOwnProperty('ArrayAs2D') || eval(__(MODULE, $$, 'ArrayAs2D', 260324, 'on'))
 
 	//==========================================================================
 	// NOTICE
@@ -117,7 +118,9 @@
 		    i.e Math.sqrt(P[0]*P[0]+P[1]*P[1]).
 		
 		~P  swaps x and y coordinates
-		    -> [ P[1],P[0] ].
+		    -> [ P[1], P[0] ].
+		    Or, if µ.SwapOrthogonal() is active,
+		    -> [ -P[1], P[0] ]  ; y is changed into -y
 	
 	To get the distance between two points P and Q, just write `+(P-Q)`.
 	To check whether two *vectors* have the same norm (disregarding their
@@ -198,7 +201,8 @@
 	a * P       <idem>                   Array          5*[2,4]       // => [10,20]
 	P * Q       DotProduct               Number         [2,-4]*[3,1]  // => 2  ; 2×3 + -4×1
 	----------------------------------------------------------------------------
-	~P          SwapCoordinates          Array          ~[3,4]        // => [4,3]
+	~P          SwapCoordinates          Array          ~[3,4]        // => [ 4,3]   ; if µ.SwapSimple() [default]
+	        or  SwapOrhogonal                           ~[3,4]        // => [-4,3]   ; if µ.SwapOrthogonal()
 	----------------------------------------------------------------------------
 	P / a       DivideByScalar           Array          [2,4]/2       // => [1,2]
 	P / Q       Determinant              Number         [2,4]/[3,5]   // => -2 ; 2×5 - 4×3
@@ -210,6 +214,9 @@
 	P >> Q      AngleBetween(P,Q)        num (rad)      [1,0]>>[-1,0] // => 3.14159265358979
 	a << P      alias of P >> a
 	Q << P      alias of P >> Q
+	IMPORTANT:  Angles are returned in [-π,+π] based on Math.atan2, -π being
+	//          *equivalent* to +π. By default, positive angles correspond to
+	//          the trigonometric orientation. More details in µ.angleOrientation()
 	----------------------------------------------------------------------------
 	P >>> n     Round to n decimals      Array          [3.4567,-1.26]>>>1 // => [3.5,-1.3]     ; 0 <= n < 20
 	n >>> P     RoundString              String         2>>>[3.5,-1]       // => "[3.50,-1.00]" ; -20 < n < +20
@@ -306,7 +313,7 @@
 			return callee.µ['~'].EQUA.EPSILON < ( rv ? t-A : A-t );
 		},
 
-		'_<=_' : function(/*num[2]|unum*/A,/*bool*/rv)
+		'_<=_' : function(/*num[2]|unum*/A,/*bool*/rv,  t)
 		// --------------------------------- EPSILON-AWARE
 		// (Less-Than-Or-Equal.) Norm comparison.
 		// Supports: `T <= A`                    rv: `A <= T`
@@ -380,11 +387,13 @@
 		// ---------------------------------
 		// (Swap.)
 		// Supports: `~T`
-		// Meaning:  swap coordinates  -->  [T[1],T[0]]
+		// Meaning:  swap coordinates     -->  [  T[1],T[0] ]   ; simple swap
+		// [ADD260223] If callee.YMULT=-1 -->  [ -T[1],T[0] ]   ; orthogonal swap
 		// => new [x,y]
 		{
-			return [ this[1],this[0] ];
-		},
+			return [ callee.YMULT*this[1], this[0] ];
+		}
+		.setup({ YMULT:1 }), // Changed to -1 if µ.SwapOrthogonal()
 
 		'_/_'  : function(/*num[2]|num*/A,/*bool*/rv,  x,y)
 		// ---------------------------------
@@ -417,7 +426,7 @@
 				);
 		},
 		
-		'_>>_': function(/*num[2]|rad*/A,/*bool*/rv,  x,y,c,s)
+		'_>>_': function(/*num[2]|rad*/A,/*bool*/rv,  k,x,y,c,s)
 		//----------------------------------
 		// (Rotate-Or-AngleBetween.)
 		// Supports: `T>>A`       (rv: `A>>T`)
@@ -426,16 +435,21 @@
 		//           Clone `this` otherwise.
 		// => new [x,y] [ROT]  |  rad [ANGLE]  ; rad may be NaN or infinite
 		{
+			k = callee.RV_TO_SIGN[1&rv];
 			x = this[0];
 			y = this[1];
 			return 2==(A||0).length ?
-				( (rv?-1:1)*Math.atan2( A[1]*x-A[0]*y, x*A[0]+y*A[1] ) ) :
+				( k*Math.atan2( A[1]*x-A[0]*y, x*A[0]+y*A[1] ) ) :
 				(
 					'number'==typeof A ?
-					[ (c=Math.cos(A))*x - (s=Math.sin(rv?-A:A))*y, s*x + c*y ] :
+					[ (c=Math.cos(A))*x - (s=k*Math.sin(A))*y, s*x + c*y ] :
 					this.slice()
 				);
-		},
+		}
+		.setup
+		({
+			RV_TO_SIGN: [1,-1], // [ADD260227] Default: trigonometric.
+		}),
 
 		'_<<_': function(/*num[2]|rad*/A,/*bool*/rv,  x,y,c,s)
 		//----------------------------------
@@ -546,6 +560,8 @@
 		setEpsilon: function setEpsilon_n_(/*?unum>0=auto*/eps)
 		//----------------------------------
 		// Set the epsilon-machine used in comparison routines. Default is 1e-4.
+		// [REM] `eps` must be greater than √(Number.EPSILON) ≈ 1.5e-8 -- since
+		// lower values would (likely) be unreliable while comparing distances.
 		// => undef
 		{
 			( 'number' == typeof eps && Math.pow(Number.EPSILON,.5) < eps ) || (eps=1e-4);
@@ -560,6 +576,94 @@
 			return callee.µ['~'].EQUA.EPSILON;
 		},
 		
+		swapSimple: function swapSimple_()
+		//----------------------------------
+		// [ADD260223] Make the ~ operator simply swap coodinates [x,y]->[y,x]
+		// This is the legacy and default behavior.
+		// => undef
+		{
+			callee.µ['~']['_~_'].YMULT = 1;
+		},
+
+		isSwapSimple: function isSwapSimple_B()
+		//----------------------------------
+		// [ADD260223] Whether the ~ operator (swap) behaves in simple mode.
+		// => bool
+		{
+			return 1===callee.µ['~']['_~_'].YMULT;
+		},
+
+		swapOrthogonal: function swapOrthogonal_()
+		//----------------------------------
+		// [ADD260223] Make the ~ operator change [x,y] to [-y,x] (orthogonal vector).
+		// [REM] Make sure your code is consistent with other ArrayAs2D-based modules
+		// when this operator is involved!
+		// => undef
+		{
+			callee.µ['~']['_~_'].YMULT = -1;
+		},
+		
+		angleOrientation: function angleOrientation_s_S(/*?'TRIGONOMETRIC'|'INDESIGN'*/angOpt)
+		//----------------------------------
+		// [ADD260227] Select the angle orientation mode: 'TRIGONOMETRIC' or 'INDESIGN'.
+		// If angOpt is missing or invalid, just returns the current orientation.
+		// 'TRIGONOMETRIC' orientation (default) refers to the way angles are
+		// measured in trigonometry, that is, counterclockwise from the positive x-axis
+		// with the positive y-axis pointing UP. In INDESIGN, angles are also positive in
+		// counterclockwise rotations but since the positive y-axis points DOWN this mode
+		// is actually opposite to the trigonometric orientation.
+		//               ---------------------------------------------
+		//                  TRIGONOMETRIC         INDESIGN
+		//               ---------------------------------------------
+		//               ↑  positive y-axis       ↓  positive y-axis
+		//               →  positive x-axis       →  positive x-axis  
+		//               _↑ angle > 0             _↑ angle > 0
+		// [REM] Depending on your project and coordinate system, you may want to change the
+		// orientation of positive angles.
+		// => str
+		{
+			const DF = 'TRIGONOMETRIC';
+			const RV = 'INDESIGN';
+			const R2S = callee.µ['~']['_>>_'].RV_TO_SIGN; // trigo: [1,-1]  ; indesign: [-1,1]
+
+			if( 'string' != typeof angOpt )
+			{
+				angOpt = 1==R2S[0] ? DF : RV;
+			}
+			else
+			{
+				angOpt = angOpt.toUpperCase();
+				RV == angOpt || (angOpt=DF);
+
+				R2S[0] = angOpt==DF ? 1 : -1;
+				R2S[1] = -R2S[0];
+			}
+			return angOpt;
+		},
+		
+		isClockwise: function isClockwise_P_P_P_B(/*[x,y]*/A,/*[x,y]*/B,/*[x,y]*/C,  d)
+		//----------------------------------
+		// Whether the points (A,B,C) in that order are visually clockwise-oriented,
+		// considering the coordinate system implied by the current angle orientation.
+		// If (ABC) is a flat triangle (colinear segments) this function returns 0.
+		// E.g. [0,0],[1,0],[0,-1] is clockwise in TRIGONOMETRIC orientation,
+		//                         not in INDESIGN orientation.
+		//      [0,0],[1,0],[0,1]  is clockwise in INDESIGN orientation,
+		//                         not in TRIGONOMETRIC orientation.
+		// ---
+		// => true [CW]  |  false [CCW]  |  0 [flat]
+		{
+			// xA*(yB-yC) + xB*(yC-yA) + xC*(yA-yB)
+			d = A[0]*(B[1]-C[1]) + B[0]*(C[1]-A[1]) + C[0]*(A[1]-B[1]);
+
+			// ORIENTATION  CLOCKWISE   R2S   +(d>0)    R2S[+(d>0)]
+			// --------------------------------------------------------
+			//       TRIGO    d < 0   [+1,-1]   0       1  (invariant)
+			//    INDESIGN    d > 0   [-1,+1]   1       1  (invariant)
+			// --------------------------------------------------------
+			return d && (1 == callee.µ['~']['_>>_'].RV_TO_SIGN[+(d>0)]);
+		},
+
 		equalNumbers: function equalNumbers_N_N_B(/*num*/a,/*num*/b)
 		//----------------------------------
 		// Epsilon-aware utility for comparing numbers.
