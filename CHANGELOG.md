@@ -1,6 +1,16 @@
-##### [260324]
+## 2.60324
 
-- [ArrayAs2D](/etc/$$.ArrayAs2D.jsxlib): Added various features, public methods and customization options relative to angle orientation and the swap operator (`~`). See the public methods `swapSimple()`, `isSwapSimple()`, `swapOrthogonal()`, `angleOrientation()`, `isClockwise()` for more detail. The new method `equalNumbers(a,b)` (epsilon-aware utility for comparing numbers) is a shortcut of the internal `~.EQUA(a,b)`, it may be invoked from a client module to keep external numeric routines consistent with `ArrayAs2D` approximations.
+Regular update (March 24, 2026.)
+Global re-generation of the core structure, including recent fixes and additions.
+
+- [File](/core/$$.File.jsxlib): Added optional `len` (uint) argument in `$$.File.readBinary(file,?len)` — See [260201](#260201).
+- [Ext/string](/core/Ext/$$.string.jsxinc): Added optional `AS_HEXA` (bool) argument in `String.prototype.toBytes()` — See [260131](#260131). Improved security of `String.fromBase64()` and `String.prototype.toBase64()` — See [260130](#260130). Added [Adler-32](https://en.wikipedia.org/wiki/Adler-32) algorithm: `myString.adler32()` yields the uint32 checksum.
+- [Env](/core/$$.Env.jsxlib) and [ESTK](/$$.estk.jsxinc) more accurately managed — See [260129](#260129).
+- [Log](/core/$$.Log.jsxlib): Calling `$$.Log.push()` with no argument writes an empty line.
+
+_(Other changes do not affect the core branch. See previous log entries regarding updated extra modules.)_
+
+   - [ArrayAs2D](/etc/$$.ArrayAs2D.jsxlib): Added various features, public methods and customization options relative to angle orientation and the swap operator (`~`). See the public methods `swapSimple()`, `isSwapSimple()`, `swapOrthogonal()`, `angleOrientation()`, `isClockwise()` for more detail. The new method `equalNumbers(a,b)` (epsilon-aware utility for comparing numbers) is a shortcut of the internal `~.EQUA(a,b)`, it may be invoked from a client module to keep external numeric routines consistent with `ArrayAs2D` approximations.
 
 ##### [260220]
 
