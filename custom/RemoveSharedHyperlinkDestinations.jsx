@@ -274,7 +274,8 @@ function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 						+ c.destinationKind + '.');
 			}
 
-			c.hyperlink.destination = newDest;
+			c.hyperlink.remove();
+			doc.hyperlinks.add(c.source, newDest);
 			
 			fixed++;
 		} catch (e2) {
