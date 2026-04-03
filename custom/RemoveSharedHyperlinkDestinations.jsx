@@ -45,7 +45,7 @@ function createCandidate(h) {
 				// destinationLabel: h.destination.label,
 				// destinationURL: h.destination.destinationURL,
 				sourceKind: 'HyperlinkTextSource',
-				source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
+				source: source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
 				hidden: h.destination.hidden,
 				bad: false,
 				toString: () => `<${h.name}> (${h.label}) -> ${h.destination.destinationURL}`
@@ -90,7 +90,7 @@ function createCandidate(h) {
 					// ---
 					// viewSetting: h.destination.viewSetting, // Enum
 					sourceKind: 'HyperlinkPageItemSource',
-					source,
+					source: source,
 					hidden: h.destination.hidden,
 					external: true,
 					bad: false,
@@ -109,7 +109,7 @@ function createCandidate(h) {
 					// destinationLabel: h.destination.label,
 					// destinationPageIndex: h.destination.destinationPage.index,
 					sourceKind: 'HyperlinkPageItemSource',
-					source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
+					source: source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
 					hidden: h.destination.hidden,
 					external: false,
 					bad: false,
@@ -154,9 +154,9 @@ function collectCandidates(doc) {
 	
 	return {
 		countTotal: n,
-		bad,
-		shared,
-		hidden
+		bad: bad,
+		shared: shared,
+		hidden: hidden
 	};
 }
 
@@ -222,7 +222,7 @@ function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 			bad++;
 		}
 	}
-	return { fixed, bad, errors };
+	return { fixed: fixed, bad: bad, errors: errors };
 }
 
 try {
