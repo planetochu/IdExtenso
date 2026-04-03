@@ -19,8 +19,8 @@ $$.load(0);
 // ---
 // Dry-run: build a plain-data list, $$.JSON preview, confirm, optional temp file before apply confirm.
 // Apply: same DOM loop inside app.doScript(..., UndoModes.ENTIRE_SCRIPT) for one undo.
-// See: https://www.indesignjs.de/extendscriptAPI/indesign-latest for latest
-// docs for extendscript API for latest InDesign version.
+// See: https://www.indesignjs.de/extendscriptAPI/indesign-latest for
+// extendScript API docs for latest InDesign version.
 // =============================================================================
 
 var DIALOG_TITLE = "RemoveSharedHyperlinkDestinations";
@@ -30,134 +30,131 @@ var DIALOG_TITLE = "RemoveSharedHyperlinkDestinations";
 var PREVIEW_LEN_THRESHOLD = 800;
 
 function createCandidate(h) {
-	var source = h.source;
+	try {
+		var source = h.source;
+		var destination = h.destination;
 
-	switch (source.constructor.name) {
-		case 'HyperlinkTextSource': {
+		var candidate = {
+			hyperlink: h,
+			index: h.index,
+			name: h.name,
+			label: h.label,
+			hidden: destination.hidden,
+			destinationKind: destination.constructor.name,
+			destination: destination,
+			sourceKind: source.constructor.name,
+			source: source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
+			ignored: false,
+			bad: false
+		};
+
+		switch (source.constructor.name) {
 			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextSource/
-			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkURLDestination/
-			// ---
-			var candidate = {
-				hyperlink: h,
-				index: h.index,
-				name: h.name,
-				label: h.label,
-				destination: h.destination,
+			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkPageItemSource/
+			case 'HyperlinkTextSource':
+			case 'HyperlinkPageItemSource': {
+				switch (destination.constructor.name) {
+					case 'HyperlinkURLDestination': {
+						// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkURLDestination/
+						// ---
+						// destinationName: h.destination.name,
+						// destinationLabel: h.destination.label,
+						// destinationURL: h.destination.destinationURL,
+
+						candidate.toString = function () { return '<' 
+							+ candidate.name
+							+ '> ('
+							+ candidate.label
+							+ ') -> '
+							+ candidate.destination.destinationURL;
+						};
+
+						return candidate;
+					}
+					case 'HyperlinkExternalPageDestination': {
+						// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkExternalPageDestination/
+						// See: https://developer.mozilla.org/en-US/docs/Web/API/File/File
+						//   (documentPath's File object ~ might not be a complete match in terms
+						//   of implementation)
+						// ---
+						// destinationName: h.destination.name,
+						// destinationLabel: h.destination.label,
+						// documentPath: h.destination.documentPath.name,
+						// destinationPageIndex: h.destination.destinationPageIndex,
+						// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkDestinationPageSetting/
+						// ---
+						// viewSetting: h.destination.viewSetting, // Enum
+
+						candidate.toString = function () { return '<' 
+							+ candidate.name
+							+ '> ('
+							+ candidate.label
+							+ ') -> '
+							+ candidate.destination.documentPath.name
+							+ ' (page '
+							+ candidate.destination.destinationPageIndex
+							+ ')';
+						};
+	
+						return candidate;
+					}
+					case 'HyperlinkPageDestination': {
+						// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkPageDestination/
+						// ---
+						// destinationName: h.destination.name,
+						// destinationLabel: h.destination.label,
+						// destinationPageIndex: h.destination.destinationPage.index,
+
+						candidate.toString = function () { return '<' 
+							+ candidate.name
+							+ '> ('
+							+ candidate.label
+							+ ') -> page '
+							+ candidate.destination.destinationPage.index;
+						};
+
+						return candidate;
+					}
+					default:
+						throw new Error('Unhandled destination kind: ' + h.destination.constructor.name);
+				}
+			}
+			case 'CrossReferenceSource': {
+				// See: https://developer.adobe.com/indesign/dom/api/c/CrossReferenceSource/
+				// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextDestination/
+				// ---
 				// destinationName: h.destination.name,
 				// destinationLabel: h.destination.label,
-				// destinationURL: h.destination.destinationURL,
-				sourceKind: 'HyperlinkTextSource',
-				source: source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
-				hidden: h.destination.hidden,
-				bad: false
-			};
+				// destinationText: h.destination.destinationText.contents,
 
-			candidate.toString = function () { return '<' 
-				+ candidate.name
-				+ '> ('
-				+ candidate.label
-				+ ') -> '
-				+ candidate.destination.destinationURL;
-			};
-
-			return candidate;
-		}
-		// case 'CrossReferenceSource':
-		// 	// See: https://developer.adobe.com/indesign/dom/api/c/CrossReferenceSource/
-		// 	// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextDestination/
-		// 	// ---
-		// 	return {
-		// 		hyperlink: h,
-		// 		index: h.index,
-		// 		name: h.name,
-		// 		label: h.label,
-		// 		destination: h.destination,
-		// 		// destinationName: h.destination.name,
-		// 		// destinationLabel: h.destination.label,
-		// 		// destinationText: h.destination.destinationText.contents,
-		// 		sourceKind: 'CrossReferenceSource',
-		// 		source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
-		// 		hidden: h.destination.hidden,
-		// 		bad: false,
-		// 		toString: (function () { return '<' + this.name + '> (' + this.label + ') -> ' + this.destination.destinationText.contents; }).bind(this)
-		// 	};
-		case 'HyperlinkPageItemSource': {
-			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkExternalPageDestination/
-			// See: https://developer.mozilla.org/en-US/docs/Web/API/File/File
-			//   (documentPath's File object ~ might not be a complete match in terms
-			//   of implementation)
-			// ---
-			if (h.destination.constructor.name === 'HyperlinkExternalPageDestination') {
-				var candidate = {
-					hyperlink: h,
-					index: h.index,
-					name: h.name,
-					label: h.label,
-					destination: h.destination,
-					// destinationName: h.destination.name,
-					// destinationLabel: h.destination.label,
-					// documentPath: h.destination.documentPath.name,
-					// destinationPageIndex: h.destination.destinationPageIndex,
-					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkDestinationPageSetting/
-					// ---
-					// viewSetting: h.destination.viewSetting, // Enum
-					sourceKind: 'HyperlinkPageItemSource',
-					source: source,
-					hidden: h.destination.hidden,
-					external: true,
-					bad: false
-				};
-
+				candidate.ignored = true;
 				candidate.toString = function () { return '<' 
 					+ candidate.name
 					+ '> ('
 					+ candidate.label
 					+ ') -> '
-					+ candidate.destination.documentPath.name
-					+ ' (page '
-					+ candidate.destination.destinationPageIndex
-					+ ')';
-				};
-
-				return candidate;
-			} else {
-				// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkPageDestination/
-				// ---
-				var candidate = {
-					hyperlink: h,
-					index: h.index,
-					name: h.name,
-					label: h.label,
-					destination: h.destination,
-					// destinationName: h.destination.name,
-					// destinationLabel: h.destination.label,
-					// destinationPageIndex: h.destination.destinationPage.index,
-					sourceKind: 'HyperlinkPageItemSource',
-					source: source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
-					hidden: h.destination.hidden,
-					external: false,
-					bad: false
-				};
-
-				candidate.toString = function () { return '<' 
-					+ candidate.name
-					+ '> ('
-					+ candidate.label
-					+ ') -> page '
-					+ candidate.destination.destinationPage.index;
+					+ candidate.destination.destinationText.contents;
 				};
 
 				return candidate;
 			}
+			default:
+				throw new Error('Unhandled source or destination kind: '
+					+ source.constructor.name
+					+ ' -> ' + destination.constructor.name);
 		}
-		default:
-			throw new Error('Unhandled source kind: ' + h.source.constructor.name);
+	} catch (e) {
+		throw new Error('Failed to create candidate for hyperlink.'
+			+ ' '
+			+ (e.message ? e.message : '(unknown error)')
+		);
 	}
 }
 
 function collectCandidates(doc) {
 	var shared = [];
 	var hidden = [];
+	var ignored = [];
 	var bad = [];
 
 	// See: https://developer.adobe.com/indesign/dom/api/d/Document/
@@ -171,10 +168,13 @@ function collectCandidates(doc) {
 		try {
 			// See: https://developer.adobe.com/indesign/dom/api/h/Hyperlink/
 			// ---
-			if (h.destination.hidden == false) {
-				shared.push(createCandidate(h));
-			} else {
-				hidden.push(createCandidate(h));
+			var c = createCandidate(h);
+			if (c.ignored) {
+				ignored.push(c);
+			} else if (c.hidden) {
+				hidden.push(c);
+			} else if (!c.hidden) {
+				shared.push(c);
 			}
 		} catch (e) {
 			bad.push({
@@ -188,9 +188,10 @@ function collectCandidates(doc) {
 	
 	return {
 		countTotal: n,
-		bad: bad,
 		shared: shared,
-		hidden: hidden
+		hidden: hidden,
+		ignored: ignored,
+		bad: bad,
 	};
 }
 
@@ -205,7 +206,6 @@ function collectCandidates(doc) {
 function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 	var fixed = 0;
 	var bad = candidates.bad.length;
-
 	var errors = [];
 
 	for (var i = 0; i < candidates.bad.length; i++) {
@@ -219,16 +219,19 @@ function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 		try {
 			// See: https://developer.adobe.com/indesign/dom/api/d/Document/
 			// ---
-			if (c.sourceKind === 'HyperlinkTextSource') {
-				// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkURLDestinations/
-				// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkURLDestination/
-				// ---
-				newDest = doc.hyperlinkURLDestinations.add(
-					c.destination.destinationURL, {
-						hidden: true
-					});
-			} else if (c.sourceKind === 'HyperlinkPageItemSource') {
-				if (c.external) {
+			switch (c.destinationKind) {
+				case 'HyperlinkURLDestination': {
+					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkURLDestinations/
+					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkURLDestination/
+					// ---
+					newDest = doc.hyperlinkURLDestinations.add(
+						c.destination.destinationURL, {
+							hidden: true
+						});
+
+					break;
+				}
+				case 'HyperlinkExternalPageDestination': {				
 					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkExternalPageDestinations/
 					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkExternalPageDestination/
 					// ---
@@ -239,9 +242,12 @@ function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 							documentPath: c.destination.documentPath,
 							destinationPageIndex: c.destination.destinationPageIndex,
 							viewSetting: c.destination.viewSetting
-					  }
+						}
 					);
-				} else {
+
+					break;
+				}
+				case 'HyperlinkPageDestination': {
 					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkPageDestinations/
 					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkPageDestination/
 					// ---
@@ -249,7 +255,13 @@ function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 						c.destination.destinationPage, {
 							hidden: true
 						});
+
+					break;
 				}
+				default:
+					throw new Error(c.toString()
+					  + ': -> Unhandled destination kind: '
+						+ c.destinationKind + '.');
 			}
 
 			c.hyperlink.destination = newDest;
@@ -272,7 +284,9 @@ try {
 	var doc = app.activeDocument;
 	var candidates = collectCandidates(doc);
 
-	if (candidates.shared.length === 0 && candidates.bad.length === 0) {
+	if (candidates.shared.length === 0 && candidates.bad.length === 0 && candidates.ignored.length > 0) {
+		$$.success(__("No hyperlink destinations to convert. Cross-reference destinations are ignored."));
+	} else if (candidates.shared.length === 0 && candidates.bad.length === 0) {
 		$$.success(__("No shared hyperlink destinations to convert."));
 	} else if (candidates.shared.length === 0) {
 		var errors = [];
@@ -281,15 +295,17 @@ try {
 			errors.push(candidates.bad[i].error);
 		}
 
-		$$.error(__("No valid shared hyperlink destinations to convert. Broken or invalid (skipped): %1. Errors: %2.",
+		$$.error(__("No valid shared hyperlink destinations to convert. Broken or invalid: %1. Errors: %2.",
 			String(candidates.bad.length),
-			errors.join($$.newLine)));
+			errors.join($$.newLine)
+		));
 	} else {
 		var candidatesPreview = [];
 		for (var i = 0; i < candidates.shared.length; i++) {
 			candidatesPreview.push({
 				link: candidates.shared[i].toString(),
-				sourceKind: candidates.shared[i].sourceKind
+				sourceKind: candidates.shared[i].sourceKind,
+				destinationKind: candidates.shared[i].destinationKind
 			});
 		}
 		var jsonPreview = $$.JSON(candidatesPreview, 1);
