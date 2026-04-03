@@ -33,11 +33,11 @@ function createCandidate(h) {
 	var source = h.source;
 
 	switch (source.constructor.name) {
-		case 'HyperlinkTextSource':
+		case 'HyperlinkTextSource': {
 			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextSource/
 			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkURLDestination/
 			// ---
-			const candidate = {
+			var candidate = {
 				hyperlink: h,
 				index: h.index,
 				name: h.name,
@@ -61,6 +61,7 @@ function createCandidate(h) {
 			};
 
 			return candidate;
+		}
 		// case 'CrossReferenceSource':
 		// 	// See: https://developer.adobe.com/indesign/dom/api/c/CrossReferenceSource/
 		// 	// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextDestination/
@@ -80,14 +81,14 @@ function createCandidate(h) {
 		// 		bad: false,
 		// 		toString: (function () { return '<' + this.name + '> (' + this.label + ') -> ' + this.destination.destinationText.contents; }).bind(this)
 		// 	};
-		case 'HyperlinkPageItemSource':
+		case 'HyperlinkPageItemSource': {
 			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkExternalPageDestination/
 			// See: https://developer.mozilla.org/en-US/docs/Web/API/File/File
 			//   (documentPath's File object ~ might not be a complete match in terms
 			//   of implementation)
 			// ---
 			if (h.destination.constructor.name === 'HyperlinkExternalPageDestination') {
-				const candidate = {
+				var candidate = {
 					hyperlink: h,
 					index: h.index,
 					name: h.name,
@@ -122,7 +123,7 @@ function createCandidate(h) {
 			} else {
 				// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkPageDestination/
 				// ---
-				const candidate = {
+				var candidate = {
 					hyperlink: h,
 					index: h.index,
 					name: h.name,
@@ -145,7 +146,10 @@ function createCandidate(h) {
 					+ ') -> page '
 					+ candidate.destination.destinationPage.index;
 				};
+
+				return candidate;
 			}
+		}
 		default:
 			throw new Error('Unhandled source kind: ' + h.source.constructor.name);
 	}
