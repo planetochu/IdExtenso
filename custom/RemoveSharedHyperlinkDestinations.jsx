@@ -67,7 +67,7 @@ function createCandidate(h) {
 		// 		source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
 		// 		hidden: h.destination.hidden,
 		// 		bad: false,
-		// 		toString: () => '<' + h.name + '> (' + h.label + ') -> ' + h.destination.destinationText.contents
+		// 		toString: (function () { return '<' + this.name + '> (' + this.label + ') -> ' + this.destination.destinationText.contents; }).bind(this)
 		// 	};
 		case 'HyperlinkPageItemSource':
 			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkExternalPageDestination/
@@ -171,7 +171,7 @@ function collectCandidates(doc) {
 function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 	var fixed = 0;
 	var bad = candidates.bad.length;
-	var errors = candidates.bad.map(b => b.error);
+	var errors = candidates.bad.map(function (b) { return b.error; });
 
 	for (var i = 0; i < candidates.shared.length; i++) {
 		var c = candidates.shared[i];
@@ -238,9 +238,9 @@ try {
 	} else if (candidates.shared.length === 0) {
 		$$.error(__("No valid shared hyperlink destinations to convert. Broken or invalid (skipped): %1. Errors: %2.",
 			String(candidates.bad.length),
-			candidates.bad.map(b => b.error).join($$.newLine)));
+			candidates.bad.map(function (b) { return b.error; }).join($$.newLine)));
 	} else {
-		var jsonPreview = $$.JSON(candidates.shared.map(c => {
+		var jsonPreview = $$.JSON(candidates.shared.map(function (c) {
 			return {
 				link: c.toString(),
 				sourceKind: c.sourceKind
