@@ -48,7 +48,7 @@ function createCandidate(h) {
 				source: source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
 				hidden: h.destination.hidden,
 				bad: false,
-				toString: () => `<${h.name}> (${h.label}) -> ${h.destination.destinationURL}`
+				toString: () => '<' + h.name + '> (' + h.label + ') -> ' + h.destination.destinationURL
 			};
 		// case 'CrossReferenceSource':
 		// 	// See: https://developer.adobe.com/indesign/dom/api/c/CrossReferenceSource/
@@ -67,7 +67,7 @@ function createCandidate(h) {
 		// 		source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
 		// 		hidden: h.destination.hidden,
 		// 		bad: false,
-		// 		toString: () => `<${h.name}> (${h.label}) -> ${h.destination.destinationText.contents}`
+		// 		toString: () => '<' + h.name + '> (' + h.label + ') -> ' + h.destination.destinationText.contents
 		// 	};
 		case 'HyperlinkPageItemSource':
 			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkExternalPageDestination/
@@ -94,7 +94,7 @@ function createCandidate(h) {
 					hidden: h.destination.hidden,
 					external: true,
 					bad: false,
-					toString: () => `<${h.name}> (${h.label}) -> ${h.destination.documentPath.name} (page ${h.destination.destinationPageIndex})`
+					toString: () => '<' + h.name + '> (' + h.label + ') -> ' + h.destination.documentPath.name + ' (page ' + h.destination.destinationPageIndex + ')'
 				};
 			} else {
 				// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkPageDestination/
@@ -113,7 +113,7 @@ function createCandidate(h) {
 					hidden: h.destination.hidden,
 					external: false,
 					bad: false,
-					toString: () => `<${h.name}> (${h.label}) -> page ${h.destination.destinationPage.index}`
+					toString: () => '<' + h.name + '> (' + h.label + ') -> page ' + h.destination.destinationPage.index
 				};
 			}
 		default:
@@ -147,7 +147,7 @@ function collectCandidates(doc) {
 				hyperlink: h,
 				bad: true,
 				error: e.message ? e.message : '(unknown error)',
-				toString: () => `Type error -> ${e.message ? e.message : '(unknown error)'}`
+				toString: () => 'Type error -> ' + (e.message ? e.message : '(unknown error)')
 			});
 		}
 	}
