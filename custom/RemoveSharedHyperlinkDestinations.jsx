@@ -94,7 +94,7 @@ function createCandidate(h) {
 					hidden: h.destination.hidden,
 					external: true,
 					bad: false,
-					toString: (function () { return '<' + this.name + '> (' + this.label + ') -> ' + this.destination.documentPath.name + ' (page ' + this.destination.destinationPageIndex + ')'; }).bind(this)
+					toString: function () { return '<' + this.name + '> (' + this.label + ') -> ' + this.destination.documentPath.name + ' (page ' + this.destination.destinationPageIndex + ')'; }
 				};
 			} else {
 				// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkPageDestination/
@@ -113,7 +113,7 @@ function createCandidate(h) {
 					hidden: h.destination.hidden,
 					external: false,
 					bad: false,
-					toString: (function () { return '<' + this.name + '> (' + this.label + ') -> page ' + this.destination.destinationPage.index; }).bind(this)
+					toString: function () { return '<' + this.name + '> (' + this.label + ') -> page ' + this.destination.destinationPage.index; }
 				};
 			}
 		default:
@@ -147,7 +147,7 @@ function collectCandidates(doc) {
 				hyperlink: h,
 				bad: true,
 				error: e.message ? e.message : '(unknown error)',
-				toString: (function () { return 'Type error -> ' + (this.error ? this.error : '(unknown error)'); }).bind(this)
+				toString: function () { return 'Type error -> ' + (this.error ? this.error : '(unknown error)'); }
 			});
 		}
 	}
