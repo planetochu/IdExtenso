@@ -171,7 +171,12 @@ function collectCandidates(doc) {
 function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 	var fixed = 0;
 	var bad = candidates.bad.length;
-	var errors = candidates.bad.map(function (b) { return b.error; });
+
+	var errors = [];
+
+	for (var i = 0; i < candidates.bad.length; i++) {
+		errors.push(candidates.bad[i].error);
+	}
 
 	for (var i = 0; i < candidates.shared.length; i++) {
 		var c = candidates.shared[i];
@@ -236,16 +241,24 @@ try {
 	if (candidates.shared.length === 0 && candidates.bad.length === 0) {
 		$$.success(__("No shared hyperlink destinations to convert."));
 	} else if (candidates.shared.length === 0) {
+		var errors = [];
+
+		for (var i = 0; i < candidates.bad.length; i++) {
+			errors.push(candidates.bad[i].error);
+		}
+
 		$$.error(__("No valid shared hyperlink destinations to convert. Broken or invalid (skipped): %1. Errors: %2.",
 			String(candidates.bad.length),
-			candidates.bad.map(function (b) { return b.error; }).join($$.newLine)));
+			errors.join($$.newLine)));
 	} else {
-		var jsonPreview = $$.JSON(candidates.shared.map(function (c) {
-			return {
-				link: c.toString(),
-				sourceKind: c.sourceKind
-			};
-		}), 1);
+		var candidatesPreview = [];
+		for (var i = 0; i < candidates.shared.length; i++) {
+			candidatesPreview.push({
+				link: candidates.shared[i].toString(),
+				sourceKind: candidates.shared[i].sourceKind
+			});
+		}
+		var jsonPreview = $$.JSON(candidatesPreview, 1);
 
 		// Long preview: offer temp file before the apply confirm (plan Step C).
 		// ---
