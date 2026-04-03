@@ -19,6 +19,8 @@ $$.load(0);
 // ---
 // Dry-run: build a plain-data list, $$.JSON preview, confirm, optional temp file before apply confirm.
 // Apply: same DOM loop inside app.doScript(..., UndoModes.ENTIRE_SCRIPT) for one undo.
+// See: https://www.indesignjs.de/extendscriptAPI/indesign-latest for latest
+// docs for extendscript API for latest InDesign version.
 // =============================================================================
 
 var DIALOG_TITLE = "RemoveSharedHyperlinkDestinations";
@@ -75,7 +77,7 @@ function createCandidate(h) {
 			//   (documentPath's File object ~ might not be a complete match in terms
 			//   of implementation)
 			// ---
-			if (h.destination.constructor.name == 'HyperlinkExternalPageDestination') {
+			if (h.destination.constructor.name === 'HyperlinkExternalPageDestination') {
 				return {
 					hyperlink: h,
 					index: h.index,
