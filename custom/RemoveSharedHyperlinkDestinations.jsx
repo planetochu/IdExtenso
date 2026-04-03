@@ -146,7 +146,7 @@ function createCandidate(h) {
 	} catch (e) {
 		throw new Error('Failed to create candidate for hyperlink.'
 			+ ' '
-			+ (e.message ? e.message : '(unknown error)')
+			+ (e.message ? e.message : e.toString() ? e.toString() : '(unknown error)')
 		);
 	}
 }
@@ -177,11 +177,17 @@ function collectCandidates(doc) {
 				shared.push(c);
 			}
 		} catch (e) {
+			var error = h.name
+			 + ' (' + h.label + ')'
+			 + ': '
+			  + (e.message ? e.message : e.toString() ? e.toString() : '(unknown error)');
+			
 			bad.push({
-				hyperlink: h,
+				name: h.name,
+			  label: h.label,
 				bad: true,
-				error: e.message ? e.message : '(unknown error)',
-				toString: function () { return 'Type error -> ' + (this.error ? this.error : '(unknown error)'); }
+				error: error,
+				toString: function () { return error }
 			});
 		}
 	}
