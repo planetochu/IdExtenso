@@ -39,7 +39,7 @@ function createCandidate(h) {
 			index: h.index,
 			name: h.name,
 			label: h.label,
-			hidden: destination.hidden,
+			hidden: true, // assuming not a shared destination by default
 			destinationKind: destination.constructor.name,
 			destination: destination,
 			sourceKind: source.constructor.name,
@@ -61,6 +61,7 @@ function createCandidate(h) {
 						// destinationLabel: h.destination.label,
 						// destinationURL: h.destination.destinationURL,
 
+						candidate.hidden = destination.hidden;
 						candidate.toString = function () { return '<' 
 							+ candidate.name
 							+ '> ('
@@ -85,6 +86,8 @@ function createCandidate(h) {
 						// ---
 						// viewSetting: h.destination.viewSetting, // Enum
 
+						candidate.ignored = true;
+						candidate.hidden = destination.hidden;
 						candidate.toString = function () { return '<' 
 							+ candidate.name
 							+ '> ('
@@ -105,6 +108,7 @@ function createCandidate(h) {
 						// destinationLabel: h.destination.label,
 						// destinationPageIndex: h.destination.destinationPage.index,
 
+						candidate.ignored = true;
 						candidate.toString = function () { return '<' 
 							+ candidate.name
 							+ '> ('
