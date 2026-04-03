@@ -48,7 +48,7 @@ function createCandidate(h) {
 				source: source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
 				hidden: h.destination.hidden,
 				bad: false,
-				toString: () => '<' + h.name + '> (' + h.label + ') -> ' + h.destination.destinationURL
+				toString: (function () { return '<' + this.name + '> (' + this.label + ') -> ' + this.destination.destinationURL; }).bind(this)
 			};
 		// case 'CrossReferenceSource':
 		// 	// See: https://developer.adobe.com/indesign/dom/api/c/CrossReferenceSource/
@@ -94,7 +94,7 @@ function createCandidate(h) {
 					hidden: h.destination.hidden,
 					external: true,
 					bad: false,
-					toString: () => '<' + h.name + '> (' + h.label + ') -> ' + h.destination.documentPath.name + ' (page ' + h.destination.destinationPageIndex + ')'
+					toString: (function () { return '<' + this.name + '> (' + this.label + ') -> ' + this.destination.documentPath.name + ' (page ' + this.destination.destinationPageIndex + ')'; }).bind(this)
 				};
 			} else {
 				// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkPageDestination/
@@ -113,7 +113,7 @@ function createCandidate(h) {
 					hidden: h.destination.hidden,
 					external: false,
 					bad: false,
-					toString: () => '<' + h.name + '> (' + h.label + ') -> page ' + h.destination.destinationPage.index
+					toString: (function () { return '<' + this.name + '> (' + this.label + ') -> page ' + this.destination.destinationPage.index; }).bind(this)
 				};
 			}
 		default:
@@ -147,7 +147,7 @@ function collectCandidates(doc) {
 				hyperlink: h,
 				bad: true,
 				error: e.message ? e.message : '(unknown error)',
-				toString: () => 'Type error -> ' + (e.message ? e.message : '(unknown error)')
+				toString: (function () { return 'Type error -> ' + (this.error ? this.error : '(unknown error)'); }).bind(this)
 			});
 		}
 	}
