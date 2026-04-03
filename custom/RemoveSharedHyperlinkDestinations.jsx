@@ -37,7 +37,7 @@ function createCandidate(h) {
 			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextSource/
 			// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkURLDestination/
 			// ---
-			return {
+			const candidate = {
 				hyperlink: h,
 				index: h.index,
 				name: h.name,
@@ -49,9 +49,18 @@ function createCandidate(h) {
 				sourceKind: 'HyperlinkTextSource',
 				source: source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
 				hidden: h.destination.hidden,
-				bad: false,
-				toString: (function () { return '<' + this.name + '> (' + this.label + ') -> ' + this.destination.destinationURL; }).bind(this)
+				bad: false
 			};
+
+			candidate.toString = function () { return '<' 
+				+ candidate.name
+				+ '> ('
+				+ candidate.label
+				+ ') -> '
+				+ candidate.destination.destinationURL;
+			};
+
+			return candidate;
 		// case 'CrossReferenceSource':
 		// 	// See: https://developer.adobe.com/indesign/dom/api/c/CrossReferenceSource/
 		// 	// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextDestination/
@@ -78,7 +87,7 @@ function createCandidate(h) {
 			//   of implementation)
 			// ---
 			if (h.destination.constructor.name === 'HyperlinkExternalPageDestination') {
-				return {
+				const candidate = {
 					hyperlink: h,
 					index: h.index,
 					name: h.name,
@@ -95,13 +104,25 @@ function createCandidate(h) {
 					source: source,
 					hidden: h.destination.hidden,
 					external: true,
-					bad: false,
-					toString: function () { return '<' + this.name + '> (' + this.label + ') -> ' + this.destination.documentPath.name + ' (page ' + this.destination.destinationPageIndex + ')'; }
+					bad: false
 				};
+
+				candidate.toString = function () { return '<' 
+					+ candidate.name
+					+ '> ('
+					+ candidate.label
+					+ ') -> '
+					+ candidate.destination.documentPath.name
+					+ ' (page '
+					+ candidate.destination.destinationPageIndex
+					+ ')';
+				};
+
+				return candidate;
 			} else {
 				// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkPageDestination/
 				// ---
-				return {
+				const candidate = {
 					hyperlink: h,
 					index: h.index,
 					name: h.name,
@@ -114,8 +135,15 @@ function createCandidate(h) {
 					source: source, // InDesign (probably) doesn't clean these up if a hyperlink is removed.
 					hidden: h.destination.hidden,
 					external: false,
-					bad: false,
-					toString: function () { return '<' + this.name + '> (' + this.label + ') -> page ' + this.destination.destinationPage.index; }
+					bad: false
+				};
+
+				candidate.toString = function () { return '<' 
+					+ candidate.name
+					+ '> ('
+					+ candidate.label
+					+ ') -> page '
+					+ candidate.destination.destinationPage.index;
 				};
 			}
 		default:
