@@ -311,7 +311,7 @@ function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 				label: c.label,
 			});
 
-			if (newHyperlink.sourceKind === 'HyperlinkTextSource') {
+			if (c.sourceKind === 'HyperlinkTextSource') {
 				try {
 					newHyperlink.source.sourceText.appliedCharacterStyle = c.source.sourceText.appliedCharacterStyle;
 				}
