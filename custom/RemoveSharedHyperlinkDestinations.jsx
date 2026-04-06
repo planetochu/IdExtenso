@@ -74,7 +74,6 @@ function createCandidate(h) {
 					}
 					case 'HyperlinkTextDestination': {
 						// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextDestination/
-						// See: https://developer.mozilla.org/en-US/docs/Web/API/File/File
 						// ---
 						// destinationName: h.destination.name,
 						// destinationLabel: h.destination.label,
