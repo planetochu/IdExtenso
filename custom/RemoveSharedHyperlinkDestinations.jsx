@@ -259,6 +259,18 @@ function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 
 					break;
 				}
+				case 'HyperlinkTextDestination': {
+					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextDestinations/
+					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextDestination/
+					// ---
+
+					newDest = doc.hyperlinkTextDestinations.add(
+						c.destination.destinationText, {
+							hidden: true
+						});
+
+					break;
+				}
 				case 'HyperlinkExternalPageDestination': {				
 					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkExternalPageDestinations/
 					// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkExternalPageDestination/
@@ -293,10 +305,20 @@ function applyRemoveSharedDestinationsFromCandidates(doc, candidates) {
 			}
 
 			c.hyperlink.remove();
-			doc.hyperlinks.add(c.source, newDest, {
+
+			var newHyperlink = doc.hyperlinks.add(c.source, newDest, {
 				name: c.name,
 				label: c.label,
 			});
+
+			if (newHyperlink.sourceKind === 'HyperlinkTextSource') {
+				try {
+					newHyperlink.source.sourceText.appliedCharacterStyle = c.source.sourceText.appliedCharacterStyle;
+				}
+				catch (e) {
+					errors.push('Failed to set applied character style: ' + (e.message || '(unknown error)'));
+				}
+			}
 			
 			fixed++;
 		} catch (e2) {
