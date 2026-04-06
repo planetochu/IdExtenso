@@ -72,6 +72,23 @@ function createCandidate(h) {
 
 						return candidate;
 					}
+					case 'HyperlinkTextDestination': {
+						// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkTextDestination/
+						// See: https://developer.mozilla.org/en-US/docs/Web/API/File/File
+						// ---
+						// destinationName: h.destination.name,
+						// destinationLabel: h.destination.label,
+						// destinationText: h.destination.destinationText.contents,
+
+						candidate.hidden = destination.hidden;
+						candidate.toString = function () { return '<' 
+							+ candidate.name
+							+ '> ('
+							+ candidate.label
+							+ ') -> '
+							+ candidate.destination.destinationText.contents;
+						};
+					}
 					case 'HyperlinkExternalPageDestination': {
 						// See: https://developer.adobe.com/indesign/dom/api/h/HyperlinkExternalPageDestination/
 						// See: https://developer.mozilla.org/en-US/docs/Web/API/File/File
@@ -109,6 +126,7 @@ function createCandidate(h) {
 						// destinationPageIndex: h.destination.destinationPage.index,
 
 						candidate.ignored = true;
+						candidate.hidden = destination.hidden;
 						candidate.toString = function () { return '<' 
 							+ candidate.name
 							+ '> ('
@@ -132,6 +150,7 @@ function createCandidate(h) {
 				// destinationText: h.destination.destinationText.contents,
 
 				candidate.ignored = true;
+				candidate.hidden = destination.hidden;
 				candidate.toString = function () { return '<' 
 					+ candidate.name
 					+ '> ('
