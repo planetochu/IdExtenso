@@ -6,7 +6,7 @@
 // ---
 #include '../$$.jsxinc'
 
-// Dom.Dialog for pattern, replacement, and flags.
+// Dom.Dialog for pattern, replacement, capture group, and flags.
 // ---
 #include '../etc/$$.Dom.Dialog.jsxlib'
 
@@ -21,8 +21,11 @@ $$.load();
 // document (one shared destination update applies to all hyperlinks using it).
 // Preview with $$.JSON, optional temp file for long previews, single undo via
 // app.doScript(..., UndoModes.ENTIRE_SCRIPT).
-// Replacement strings follow String.replace rules: $1, $2, … = capture groups;
-// $& = full match; $$ = literal dollar.
+//
+// Modes:
+// - Capture group empty: String.replace(re, replaceWith) — $1, $2, … in replace.
+// - Capture group = n (1-based): only the text of capturing group n is replaced
+//   by the replace string (literal; no $ expansion in that mode).
 // =============================================================================
 
 var DIALOG_TITLE = __("RegexReplaceHyperlinkURLDestinations");
@@ -31,14 +34,73 @@ var DIALOG_TITLE = __("RegexReplaceHyperlinkURLDestinations");
 // ---
 var PREVIEW_LEN_THRESHOLD = 800;
 
-function collectUrlDestinationPreview(doc, re, replacement) {
+/** @param groupIndex 1-based, or null for standard replace */
+function applyReplacement(before, re, replacement, groupIndex) {
+	if (groupIndex === null) {
+		return before.replace(re, replacement);
+	}
+
+	return before.replace(re, function (match) {
+		var groupText = arguments[groupIndex];
+		if (groupText === undefined || groupText === null) {
+			return match;
+		}
+
+		var g = String(groupText);
+
+		if (!g.length) {
+			return match;
+		}
+
+		var rel = match.indexOf(g);
+
+		if (rel < 0) {
+			return match;
+		}
+
+		return match.slice(0, rel) + replacement + match.slice(rel + g.length);
+	});
+}
+
+function validateGroupIndexAgainstPattern(re, groupIndex, doc) {
+	if (groupIndex === null) {
+		return;
+	}
+
+	var rx = new RegExp(re.source, re.flags);
+	var n = doc.hyperlinkURLDestinations.count();
+	var i;
+	var u;
+	var m;
+
+	for (i = 0; i < n; i++) {
+		u = String(doc.hyperlinkURLDestinations[i].destinationURL);
+		rx.lastIndex = 0;
+		m = rx.exec(u);
+
+		if (m) {
+			if (m[groupIndex] === undefined) {
+				$$.error(
+					__(
+						"Capture group %1 is not present in the first matching URL (pattern has too few groups for that match).",
+						String(groupIndex)
+					)
+				);
+			}
+
+			return;
+		}
+	}
+}
+
+function collectUrlDestinationPreview(doc, re, replacement, groupIndex) {
 	var out = [];
 	var n = doc.hyperlinkURLDestinations.count();
 
 	for (var i = 0; i < n; i++) {
 		var dest = doc.hyperlinkURLDestinations[i];
 		var before = String(dest.destinationURL);
-		var after = before.replace(re, replacement);
+		var after = applyReplacement(before, re, replacement, groupIndex);
 
 		if (after !== before) {
 			out.push({
@@ -54,7 +116,7 @@ function collectUrlDestinationPreview(doc, re, replacement) {
 	return out;
 }
 
-function applyUrlDestinationReplacements(doc, re, replacement) {
+function applyUrlDestinationReplacements(doc, re, replacement, groupIndex) {
 	var updated = 0;
 	var errors = [];
 	var n = doc.hyperlinkURLDestinations.count();
@@ -64,7 +126,7 @@ function applyUrlDestinationReplacements(doc, re, replacement) {
 
 		try {
 			var before = String(dest.destinationURL);
-			var after = before.replace(re, replacement);
+			var after = applyReplacement(before, re, replacement, groupIndex);
 
 			if (after !== before) {
 				dest.destinationURL = after;
@@ -96,9 +158,16 @@ try {
 	} else {
 		var _capFind = __("Find (regex)");
 		var _capReplace = __("Replace with");
+		var _capGroup = __("Capture group");
 		var _capFlags = __("Flags");
-		var _hintReplace = __(
-			'In "Replace with", use $1, $2 for capture groups; $& for the full match; $$ for a literal $.'
+		var _hintStandard = __(
+			'Leave capture group empty for normal replace; in "Replace with" you may use $1, $2, $&, etc.'
+		);
+		var _hintGroup = __(
+			"If capture group is a positive integer (1-based), only that group's text is replaced by the replace string (literal text)."
+		);
+		var _hintFlags = __(
+			"Flags: default is g. Clear flags for a single match per URL."
 		);
 
 		var dialogXML =
@@ -106,8 +175,11 @@ try {
 				<DialogColumn>
 					<TextEditbox key="pattern" caption={_capFind} edit="" />
 					<TextEditbox key="replacement" caption={_capReplace} edit="" />
-					<StaticText caption={_hintReplace} />
+					<TextEditbox key="captureGroup" caption={_capGroup} edit="" />
 					<TextEditbox key="flags" caption={_capFlags} edit="g" />
+					<StaticText caption={_hintStandard} />
+					<StaticText caption={_hintGroup} />
+					<StaticText caption={_hintFlags} />
 				</DialogColumn>
 			</Dialog>;
 
@@ -119,11 +191,18 @@ try {
 		} else {
 			var pattern = String(dlg.getValueKey("pattern") || "");
 			var replacement = String(dlg.getValueKey("replacement") || "");
-			var flags = String(dlg.getValueKey("flags") || "g");
+			var capRaw = String(dlg.getValueKey("captureGroup") || "").replace(/^\s+|\s+$/g, "");
+			var flags = String(dlg.getValueKey("flags") || "").replace(/^\s+|\s+$/g, "");
 			dlg.destroy();
 
-			if (!flags.length) {
-				flags = "g";
+			var groupIndex = null;
+
+			if (capRaw.length) {
+				groupIndex = parseInt(capRaw, 10);
+
+				if (isNaN(groupIndex) || groupIndex < 1) {
+					$$.error(__("Capture group must be a positive integer or empty."));
+				}
 			}
 
 			var re;
@@ -137,7 +216,9 @@ try {
 				);
 			}
 
-			var preview = collectUrlDestinationPreview(doc, re, replacement);
+			validateGroupIndexAgainstPattern(re, groupIndex, doc);
+
+			var preview = collectUrlDestinationPreview(doc, re, replacement, groupIndex);
 
 			if (preview.length === 0) {
 				$$.success(__("No matching URL destinations. Nothing was changed."));
@@ -170,7 +251,7 @@ try {
 
 					app.doScript(
 						function () {
-							var r = applyUrlDestinationReplacements(doc, re, replacement);
+							var r = applyUrlDestinationReplacements(doc, re, replacement, groupIndex);
 							outcome.updated = r.updated;
 							outcome.errors = r.errors;
 						},
