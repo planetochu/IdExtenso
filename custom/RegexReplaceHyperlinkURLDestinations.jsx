@@ -67,7 +67,6 @@ function validateGroupIndexAgainstPattern(re, groupIndex, doc) {
 		return;
 	}
 
-	var rx = new RegExp(re.source, re.flags);
 	var n = doc.hyperlinkURLDestinations.count();
 	var i;
 	var u;
@@ -75,10 +74,12 @@ function validateGroupIndexAgainstPattern(re, groupIndex, doc) {
 
 	for (i = 0; i < n; i++) {
 		u = String(doc.hyperlinkURLDestinations[i].destinationURL);
-		rx.lastIndex = 0;
-		m = rx.exec(u);
+		re.lastIndex = 0;
+		m = re.exec(u);
 
 		if (m) {
+			re.lastIndex = 0;
+
 			if (m[groupIndex] === undefined) {
 				$$.error(
 					__(
@@ -91,6 +92,8 @@ function validateGroupIndexAgainstPattern(re, groupIndex, doc) {
 			return;
 		}
 	}
+
+	re.lastIndex = 0;
 }
 
 function collectUrlDestinationPreview(doc, re, replacement, groupIndex) {
