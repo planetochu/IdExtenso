@@ -21,6 +21,8 @@ $$.load();
 // document (one shared destination update applies to all hyperlinks using it).
 // Preview with $$.JSON, optional temp file for long previews, single undo via
 // app.doScript(..., UndoModes.ENTIRE_SCRIPT).
+// Replacement strings follow String.replace rules: $1, $2, … = capture groups;
+// $& = full match; $$ = literal dollar.
 // =============================================================================
 
 var DIALOG_TITLE = __("RegexReplaceHyperlinkURLDestinations");
@@ -95,12 +97,16 @@ try {
 		var _capFind = __("Find (regex)");
 		var _capReplace = __("Replace with");
 		var _capFlags = __("Flags");
+		var _hintReplace = __(
+			'In "Replace with", use $1, $2 for capture groups; $& for the full match; $$ for a literal $.'
+		);
 
 		var dialogXML =
 			<Dialog name={DIALOG_TITLE} canCancel="true" captionWidth="140" editWidth="360">
 				<DialogColumn>
 					<TextEditbox key="pattern" caption={_capFind} edit="" />
 					<TextEditbox key="replacement" caption={_capReplace} edit="" />
+					<StaticText caption={_hintReplace} />
 					<TextEditbox key="flags" caption={_capFlags} edit="g" />
 				</DialogColumn>
 			</Dialog>;
